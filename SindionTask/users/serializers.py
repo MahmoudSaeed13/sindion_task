@@ -2,7 +2,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ParseError
 from users.models import User
 from django.contrib.auth import authenticate
-from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.exceptions import AuthenticationFailed, NotFound
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from django.contrib.auth.password_validation import validate_password
 
@@ -80,3 +80,40 @@ class ChangePasswordSerializer(serializers.ModelSerializer):
                 {"old_password": "Old password is not correct"}
             )
         return value
+
+class RequestResetPasswordSerializer(serializers.ModelSerializer):
+    email = serializers.CharField(max_length=500, min_length=6, write_only=True)
+
+    class Meta:
+        model = User
+        fields = ['email']
+
+    def validate(self, attrs):
+        email = attrs['email']
+        
+        if not email:
+            raise ParseError("Email must be provided!")
+        user = User.objects.filter(email=email)
+        if not user:
+            raise NotFound("This email address is not registered")
+
+        return super().validate(attrs)
+
+
+# class ResetPasswordSerializer(serializers.ModelSerializer):
+#     new_password = serializers.CharField(required=True)
+#     confirm_new_password = serializers.CharField(required=True)
+
+    
+#     class Meta:
+#         model = User
+#         fields = ("new_password", "confirm_new_password")
+
+#     def validate(self, attrs):
+#         if attrs["confirm_new_password"] != attrs["new_password"]:
+#             raise serializers.ValidationError(
+#                 {"password": "Password fields didn't match."}
+#             )
+#         print(attrs)
+#         return attrs
+
