@@ -1,22 +1,22 @@
-from django.shortcuts import render
-from rest_framework.generics import GenericAPIView, UpdateAPIView
+from rest_framework.generics import GenericAPIView, UpdateAPIView, ListAPIView, RetrieveAPIView
 from users.serializers import (LoginSerializer, 
                                 LogoutSerializer, 
                                 ChangePasswordSerializer, 
                                 RequestResetPasswordSerializer,
+                                UserSerializer
                                 )
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from users.models import User
 from users.permissions import OwnProfilePermission
-from rest_framework.views import APIView
-from rest_framework.viewsets import GenericViewSet, ViewSet
-from rest_framework.decorators import action
 from users.tasks import send_reset_password_email
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from rest_framework.views import APIView
+from django.shortcuts import get_object_or_404
+
 # Create your views here.
 
 class LoginAPIView(GenericAPIView):
@@ -90,4 +90,45 @@ class ResetPassword(GenericAPIView):
             user.set_password(request.data['new_password'])
             user.save()
             return Response("password updated successfully", status=status.HTTP_200_OK)
+
+#CRUD operation on employees clients
+
+class EmployeeListAPIView(GenericAPIView):
+    serializer_class = UserSerializer
+    
+    def get(self, request):
+        employees = User.objects.filter(user_type='Employee')
+        serializer = self.serializer_class(employees, many=True)
         
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class ClientListAPIView(GenericAPIView):
+    serializer_class = UserSerializer
+    
+    def get(self, request):
+        employees = User.objects.filter(user_type='Client')
+        serializer = self.serializer_class(employees, many=True)
+        
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class UserDetailAPIView(APIView):
+    serializer_class = UserSerializer
+
+    def get_object(self, pk):
+        obj = get_object_or_404(User, pk=pk)
+        return obj
+    def get(self, request, pk):
+        user = self.get_object(pk=pk)
+        serializer = UserSerializer(user)
+        return Response(serializer.data)
+
+class UserDeleteAPIView(APIView):
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated, IsAdminUser]
+    def get_object(self, pk):
+        obj = get_object_or_404(User, pk=pk)
+        return obj
+    def delete(self, request, pk):
+        user = self.get_object(pk=pk)
+        serializer = UserSerializer(user)
+        return Response(serializer.data)

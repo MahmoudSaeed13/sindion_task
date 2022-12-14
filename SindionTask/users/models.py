@@ -52,9 +52,9 @@ class UserManager(BaseUserManager):
 AUTH_PROVIDERS = {'google':"google"}
 
 user_choices = [
-    ("Admin" ,"admin"),
-    ("Employee" ,"employee"),
-    ("Client" ,"client"),
+    ("admin" ,"Admin"),
+    ("employee" ,"Employee"),
+    ("client" ,"Client"),
 ]
 
 class User(AbstractBaseUser, PermissionsMixin):
@@ -64,7 +64,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_superuser = models.BooleanField(_("Is user a superuser"), default=False)
     is_active = models.BooleanField(_("Is user account activated"),default=True)
     is_staff = models.BooleanField(_("Is user a staff member"),default=False)
-    # user_type = models.CharField(max_length=50, choices=user_choices, default='client')
+    user_type = models.CharField(max_length=50, choices=user_choices, default='admin')
 
     USERNAME_FIELD = "username"
     REQUIRED_FIELDS = ["email", "name"]

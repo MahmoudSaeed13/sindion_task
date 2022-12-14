@@ -99,21 +99,8 @@ class RequestResetPasswordSerializer(serializers.ModelSerializer):
 
         return super().validate(attrs)
 
+class UserSerializer(serializers.ModelSerializer):
 
-# class ResetPasswordSerializer(serializers.ModelSerializer):
-#     new_password = serializers.CharField(required=True)
-#     confirm_new_password = serializers.CharField(required=True)
-
-    
-#     class Meta:
-#         model = User
-#         fields = ("new_password", "confirm_new_password")
-
-#     def validate(self, attrs):
-#         if attrs["confirm_new_password"] != attrs["new_password"]:
-#             raise serializers.ValidationError(
-#                 {"password": "Password fields didn't match."}
-#             )
-#         print(attrs)
-#         return attrs
-
+    class Meta:
+        model = User
+        fields = ['name', 'username', 'email','user_type']

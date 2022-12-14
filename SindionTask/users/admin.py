@@ -22,18 +22,18 @@ class UserAdmin(admin.ModelAdmin):
             _("Permissions"),
             {
                 "fields": (
-                    "is_verified",
                     "is_active",
                     "is_staff",
                     "is_superuser",
                     "groups",
                     "user_permissions",
+                    'user_type'
                 ),
             },
         ),
         (_("Important dates"), {"fields": ("last_login",)}),
     )
-    list_display = ("username", "name", "email", "is_superuser")
+    list_display = ("username", "name", "email", "is_superuser", 'user_type')
     search_fields = ["name"]
 
 admin.site.register(User, UserAdmin)
