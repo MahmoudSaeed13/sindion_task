@@ -4,8 +4,7 @@ from users.models import User
 from django.contrib.auth import authenticate
 from rest_framework.exceptions import AuthenticationFailed, NotFound
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
-from django.contrib.auth.password_validation import validate_password
-
+from users.helpers import generate_password
 class LoginSerializer(serializers.ModelSerializer):
     password = serializers.CharField(max_length=68, min_length=6, write_only=True)
     username = serializers.CharField(max_length=68, min_length=3)
@@ -104,3 +103,66 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['name', 'username', 'email','user_type']
+
+class RegisterUserSerializer(serializers.ModelSerializer):
+
+    email = serializers.EmailField(max_length=225, min_length=8)
+    name = serializers.CharField(max_length=155, min_length=8)
+    username = serializers.CharField(max_length=155, min_length=8)
+
+    class Meta:
+        model = User
+        fields = ["name", "username", "email",]
+
+
+    def validate(self, attrs):
+        name = attrs['name']
+        username = attrs['username']
+        email = attrs['email']
+
+        if not name:
+            raise serializers.ValidationError(
+                {'name': 'name can not be empty.'}
+            )
+        if not username:
+            raise serializers.ValidationError(
+                {'username': 'name can not be empty.'}
+            )
+        if not email:
+            raise serializers.ValidationError(
+                {'email':'email can not be empty.'}
+            )
+        
+        if User.objects.filter(email=attrs["email"]):
+            raise serializers.ValidationError(
+                {"email_duplication": "This email already exists"}
+            )
+
+        if User.objects.filter(username=attrs["username"]):
+            raise serializers.ValidationError(
+                {"username_duplication": "This username already exists"}
+            )
+            
+        password = generate_password()
+        attrs['password'] = password
+
+        attrs['user_type'] = self.context['request'].user.user_type
+        
+        return attrs
+
+    def create(self, validated_data):
+
+        user =  User.objects.create_user(
+            name=validated_data["name"],
+            username=validated_data["username"],
+            email=validated_data["email"],
+            password=validated_data["password"],
+        )
+        if validated_data['user_type'] == 'admin':
+            user.user_type = 'employee'
+            user.save()
+        elif validated_data['user_type'] == 'employee':
+            user.user_type = 'client'
+            user.save()
+
+        return user

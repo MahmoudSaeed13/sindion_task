@@ -1,15 +1,16 @@
-from rest_framework.generics import GenericAPIView, UpdateAPIView, ListAPIView, RetrieveAPIView
+from rest_framework.generics import GenericAPIView, UpdateAPIView, CreateAPIView
 from users.serializers import (LoginSerializer, 
                                 LogoutSerializer, 
                                 ChangePasswordSerializer, 
                                 RequestResetPasswordSerializer,
-                                UserSerializer
+                                UserSerializer,
+                                RegisterUserSerializer
                                 )
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from users.models import User
-from users.permissions import OwnProfilePermission
+from users.permissions import OwnProfilePermission, IsEmployeeUser
 from users.tasks import send_reset_password_email
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from drf_yasg.utils import swagger_auto_schema
@@ -67,11 +68,12 @@ class RquestResetPassword(GenericAPIView):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         
-        send_reset_password_email.delay(request.data['email'])
+        message = "Your request to reset your password has been processed."
+        send_reset_password_email.delay(request.data['email'], message)
 
         return Response(f"Email sent to {request.data['email']}", status=status.HTTP_200_OK)
 
-class ResetPassword(GenericAPIView):
+class ResetPassword(APIView):
 
     token_param_config = openapi.Parameter('token', in_=openapi.IN_QUERY, description = 'Description',
                                             type = openapi.TYPE_STRING)
@@ -132,3 +134,39 @@ class UserDeleteAPIView(APIView):
         user = self.get_object(pk=pk)
         serializer = UserSerializer(user)
         return Response(serializer.data)
+
+class AddEmployee(CreateAPIView):
+    serializer_class = RegisterUserSerializer
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(
+            context={"request": request}, data=request.data
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        message = "Congratulations, You have been registered as an Employee."
+        send_reset_password_email.delay(request.data['email'], message)
+
+        response = {"message":"Employee added successfully.",**serializer.data}
+
+        return Response(response, status=status.HTTP_201_CREATED)
+
+class AddClient(CreateAPIView):
+    serializer_class = RegisterUserSerializer
+    permission_classes = [IsAuthenticated, IsEmployeeUser]
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(
+            context={"request": request}, data=request.data
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        message = "Congratulations, You have been registered as an Client."
+        send_reset_password_email.delay(request.data['email'], message)
+        
+        response = {"message":"Cleint added successfully.",**serializer.data}
+
+        return Response(response, status=status.HTTP_201_CREATED)

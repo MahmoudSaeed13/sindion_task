@@ -5,7 +5,7 @@ from users.models import User
 from rest_framework_simplejwt.tokens import RefreshToken
     
 @shared_task(bind=True)
-def send_reset_password_email(self, user_email):
+def send_reset_password_email(self, user_email, message):
 
     user = User.objects.get(email=user_email)
     token = RefreshToken.for_user(user).access_token
@@ -16,7 +16,8 @@ def send_reset_password_email(self, user_email):
         "Hi "
         + user.name.split(" ")[0]
         + ",\n"
-        + "You Can reset yor password using the following link \n"
+        + message 
+        + "Please use the link below to reset your passsword \n"
         + absurl
     )
 

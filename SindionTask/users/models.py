@@ -49,7 +49,6 @@ class UserManager(BaseUserManager):
 
         return user
 
-AUTH_PROVIDERS = {'google':"google"}
 
 user_choices = [
     ("admin" ,"Admin"),

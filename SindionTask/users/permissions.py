@@ -10,3 +10,11 @@ class OwnProfilePermission(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return True
         return obj.user == request.user
+
+class IsEmployeeUser(permissions.BasePermission):
+    
+    def has_permission(self, request, view):
+        if request.user.user_type == 'employee':
+            return True
+        
+        return False
